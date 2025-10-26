@@ -13,7 +13,7 @@ class AdvancedVideoPlayerBackend:
             "required": {
                 "video_path": ("STRING", {"default": ""}),
                 "command": (["get_info", "get_frame_at_time", "get_frame_at_percent"],),
-                "time_or_percent": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.1}),
+                "timeline_percent": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 100.0, "step": 0.1, "display": "slider" }),
             }
         }
 
@@ -24,7 +24,7 @@ class AdvancedVideoPlayerBackend:
 
     CATEGORY = "Video/Advanced"
 
-    def execute(s, video_path, command, time_or_percent):
+    def execute(s, video_path, command, timeline_percent):
         if not os.path.exists(video_path):
             error_msg = f"Error: Video file not found at {video_path}"
             blank_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu")
@@ -50,9 +50,9 @@ class AdvancedVideoPlayerBackend:
 
         frame_to_get = -1
         if command == "get_frame_at_time":
-            frame_to_get = int(time_or_percent * fps)
+            frame_to_get = int(timeline_percent * fps)
         elif command == "get_frame_at_percent":
-            frame_to_get = int(frame_count * (time_or_percent / 100.0))
+            frame_to_get = int(frame_count * (timeline_percent / 100.0))
         
         if frame_to_get != -1:
             if frame_to_get < 0:
