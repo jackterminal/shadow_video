@@ -14,6 +14,7 @@ class AdvancedVideoPlayerBackend:
                 "video_path": ("STRING", {"default": ""}),
                 "command": (["get_info", "get_frame_at_time", "get_frame_at_percent"],),
                 "timeline_percent": ("FLOAT", { "default": 0.0, "min": 0.0, "max": 100.0, "step": 0.1, "display": "slider" }),
+                "loop_video": ("BOOLEAN", {"default": False})
             }
         }
 
@@ -24,7 +25,7 @@ class AdvancedVideoPlayerBackend:
 
     CATEGORY = "Video/Advanced"
 
-    def execute(s, video_path, command, timeline_percent):
+    def execute(s, video_path, command, timeline_percent, loop_video):
         if not os.path.exists(video_path):
             error_msg = f"Error: Video file not found at {video_path}"
             blank_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu")
@@ -40,7 +41,7 @@ class AdvancedVideoPlayerBackend:
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = frame_count / fps if fps > 0 else 0.0
 
-        info_text = f"Video Info:\nPath: {video_path}\nDuration: {duration:.2f}s\nFPS: {fps:.2f}\nFrames: {frame_count}"
+        info_text = f"Video Info:\nPath: {video_path}\nDuration: {duration:.2f}s\nFPS: {fps:.2f}\nFrames: {frame_count}\nLoop Enabled: {loop_video}"
 
         current_frame_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu") # Default blank image
 
