@@ -68,6 +68,7 @@ class AdvancedVideoPlayerBackend:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 image = np.array(frame).astype(np.float32) / 255.0
                 current_frame_image = torch.from_numpy(image)[None,]
+                info_text += f"\n\nCurrent Frame: {frame_to_get}"
             else:
                 info_text += "\nWarning: Could not read specified frame."
         else:
