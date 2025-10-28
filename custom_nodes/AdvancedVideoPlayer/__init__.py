@@ -4,6 +4,9 @@ import cv2
 import os
 
 class AdvancedVideoPlayerBackend:
+    # Caché estática para almacenar objetos VideoCapture y metadatos por ruta de archivo
+    VIDEO_CACHE = {}
+
     def __init__(s):
         pass
 
@@ -32,16 +35,32 @@ class AdvancedVideoPlayerBackend:
             error_msg = f"Error: Video file not found at {video_path}"
             blank_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu")
             return (blank_image, error_msg, 0.0, 0, 0.0)
+        
+        # --- Lógica de Caché y Apertura de Video ---
+        if video_path not in AdvancedVideoPlayerBackend.VIDEO_CACHE:
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                error_msg = f"Error: Could not open video file: {video_path}"
+                blank_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu")
+                return (blank_image, error_msg, 0.0, 0, 0.0)
 
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            error_msg = f"Error: Could not open video file: {video_path}"
-            blank_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu")
-            return (blank_image, error_msg, 0.0, 0, 0.0)
-
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        total_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration = total_frame_count / fps if fps > 0 else 0.0
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            total_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            duration = total_frame_count / fps if fps > 0 else 0.0
+            
+            AdvancedVideoPlayerBackend.VIDEO_CACHE[video_path] = {
+                "cap": cap,
+                "fps": fps,
+                "total_frame_count": total_frame_count,
+                "duration": duration
+            }
+        
+        # Recuperar de la caché
+        cache = AdvancedVideoPlayerBackend.VIDEO_CACHE[video_path]
+        cap = cache["cap"]
+        fps = cache["fps"]
+        total_frame_count = cache["total_frame_count"]
+        duration = cache["duration"]
 
         # --- Lógica de IN/OUT ---
         # Asegurar que end_frame no sea 0 y que no exceda el total
@@ -60,7 +79,7 @@ class AdvancedVideoPlayerBackend:
         current_frame_image = torch.zeros((1, 64, 64, 3), dtype=torch.float32, device="cpu") # Default blank image
 
         if command == "get_info":
-            cap.release()
+            # No cerramos cap, ya que está en caché.
             return (current_frame_image, info_text, duration, total_frame_count, fps)
 
         frame_to_get = -1
@@ -79,7 +98,7 @@ class AdvancedVideoPlayerBackend:
 
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_to_get)
             ret, frame = cap.read()
-            cap.release()
+            # No cerramos cap, ya que está en caché.
 
             if ret:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
